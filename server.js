@@ -113,6 +113,19 @@ app.get("/admin/orders", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+/* ================= USER ORDERS ================= */
+
+app.get("/my-orders", verifyToken, async (req, res) => {
+  try {
+
+    const orders = await Order.find({ userId: req.user.id });
+
+    res.json(orders);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /* ================= SIGNUP ================= */
 
