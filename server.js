@@ -21,6 +21,15 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
+// ================= PRODUCT MODEL =================
+const productSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+  image: String,
+  description: String
+});
+
+const Product = mongoose.model("Product", productSchema);
 
 // ================= SIGNUP =================
 app.post("/signup", async (req, res) => {
@@ -56,6 +65,52 @@ app.post("/login", async (req, res) => {
   const token = jwt.sign({ id: user._id }, "secret123", { expiresIn: "1h" });
 
   res.json({ message: "Login successful ✅", token });
+});
+
+// ================= AUTH MIDDLEWARE =================
+
+function verifyToken(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({ message: "Access Denied" });
+  }
+
+  try {
+    const verified = jwt.verify(token, "secretkey");
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(400).json({ message: "Invalid Token" });
+  }
+}
+
+function verifyAdmin(req, res, next) {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Admin Only" });
+  }
+  next();
+}
+// ================= ADMIN ADD PRODUCT =================
+
+app.post("/admin/add-product", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { name, price, image, description } = req.body;
+
+    const newProduct = new Product({
+      name,
+      price,
+      image,
+      description
+    });
+
+    await newProduct.save();
+
+    res.json({ message: "Product Added Successfully 🚀" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ================= PRODUCTS =================
