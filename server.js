@@ -152,6 +152,20 @@ app.post("/admin/add-product", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
+/* ================= DELETE PRODUCT ================= */
+
+app.delete("/admin/delete-product/:id", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Product.findByIdAndDelete(id);
+
+    res.json({ message: "Product Deleted Successfully 🗑️" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /* ================= GET PRODUCTS ================= */
 
