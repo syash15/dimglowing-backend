@@ -75,17 +75,23 @@ app.post("/login", async (req, res) => {
 // ================= AUTH MIDDLEWARE =================
 
 function verifyToken(req, res, next) {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
+  if (!authHeader) {
     return res.status(401).json({ message: "Access Denied" });
   }
+
+  // Split Bearer token
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : authHeader;
 
   try {
     const verified = jwt.verify(token, "secret123");
     req.user = verified;
     next();
   } catch (err) {
+    console.log("TOKEN ERROR:", err.message);
     res.status(400).json({ message: "Invalid Token" });
   }
 }
