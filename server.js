@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
   password: String,
-  role: { type: String, default: "user" } // Default role = user
+  role: { type: String, default: "user" }, // Default role = user
+  resetToken: String,
+  resetTokenExpiry: Date,
 });
 
 const User = mongoose.model("User", userSchema);
@@ -95,6 +97,73 @@ app.post("/login", async (req, res) => {
   }
 });
 
+/* ================= FORGOT PASSWORD ================= */
+
+app.post("/forgot-password", async (req, res) => {
+  try {
+
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(404).json({ error: "User not found" });
+
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "secret123",
+      { expiresIn: "15m" }
+    );
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    // Normally you'd send email here
+    res.json({
+      message: "Reset link generated",
+      resetLink: `https://yourfrontend.com/reset-password.html?token=${resetToken}`
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ================= RESET PASSWORD ================= */
+
+app.post("/reset-password", async (req, res) => {
+  try {
+
+    const { token, newPassword } = req.body;
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret123"
+    );
+
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.resetToken !== token)
+      return res.status(400).json({ error: "Invalid or expired token" });
+
+    if (user.resetTokenExpiry < Date.now())
+      return res.status(400).json({ error: "Token expired" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+
+    await user.save();
+
+    res.json({ message: "Password reset successful ✅" });
+
+  } catch (err) {
+    res.status(400).json({ error: "Invalid or expired token" });
+  }
+});
 
 /* ================= AUTH MIDDLEWARE ================= */
 
@@ -161,6 +230,27 @@ app.delete("/admin/delete-product/:id", verifyToken, verifyAdmin, async (req, re
     await Product.findByIdAndDelete(id);
 
     res.json({ message: "Product Deleted Successfully 🗑️" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ================= UPDATE PRODUCT ================= */
+
+app.put("/admin/update-product/:id", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, image, description } = req.body;
+
+    await Product.findByIdAndUpdate(id, {
+      name,
+      price,
+      image,
+      description
+    });
+
+    res.json({ message: "Product Updated Successfully ✏️" });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
