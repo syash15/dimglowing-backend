@@ -16,7 +16,8 @@ mongoose.connect(process.env.MONGO_URI)
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
-  password: String
+  password: String,
+  role: { type: String, default: "user" } // 👈 Add this
 });
 
 const User = mongoose.model("User", userSchema);
@@ -24,22 +25,21 @@ const User = mongoose.model("User", userSchema);
 // ================= SIGNUP =================
 app.post("/signup", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
+    const newUser = new User({
       name,
       email,
-      password: hashedPassword
+      password,
+      role: role || "user"
     });
 
-    await user.save();
+    await newUser.save();
 
     res.json({ message: "User Registered Successfully ✅" });
 
   } catch (err) {
-    res.status(400).json({ error: "User already exists" });
+    res.status(500).json({ error: err.message });
   }
 });
 
