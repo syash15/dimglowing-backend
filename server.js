@@ -53,6 +53,14 @@ const orderSchema = new mongoose.Schema({
     }
   ],
   totalAmount: Number,
+  shipping: {
+    name: String,
+    email: String,
+    phone: String,
+    address: String,
+    city: String,
+    postal: String
+  },
   status: { type: String, default: "Pending" },
   createdAt: { type: Date, default: Date.now }
 });
@@ -64,7 +72,7 @@ const Order = mongoose.model("Order", orderSchema);
 app.post("/create-order", verifyToken, async (req, res) => {
   try {
 
-    const { items } = req.body;
+    const { items, shipping } = req.body;
 
     if (!items || items.length === 0)
       return res.status(400).json({ error: "Cart is empty" });
@@ -78,7 +86,9 @@ app.post("/create-order", verifyToken, async (req, res) => {
     const newOrder = new Order({
       userId: req.user.id,
       items,
-      totalAmount
+      totalAmount,
+      shipping,
+      status: "Pending"
     });
 
     await newOrder.save();
@@ -89,7 +99,6 @@ app.post("/create-order", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 /* ================= GET ALL ORDERS (ADMIN) ================= */
 
 app.get("/admin/orders", verifyToken, verifyAdmin, async (req, res) => {
