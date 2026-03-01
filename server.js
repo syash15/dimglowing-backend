@@ -6,9 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(
-"mongodb://yash_user:Test1234@cluster0-shard-00-00.uzhtnpg.mongodb.net:27017,cluster0-shard-00-01.uzhtnpg.mongodb.net:27017,cluster0-shard-00-02.uzhtnpg.mongodb.net:27017/dimglowing?ssl=true&replicaSet=atlas-uzhtnpg-shard-0&authSource=admin&retryWrites=true&w=majority"
-)
+// ✅ Use environment variable
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected ✅"))
 .catch(err => console.log("MongoDB Error:", err));
 
