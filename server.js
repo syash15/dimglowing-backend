@@ -36,10 +36,12 @@ app.post("/signup", async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       name,
       email,
-      password,
+      password: hashedPassword,
       role: role || "user"
     });
 
@@ -51,7 +53,6 @@ app.post("/signup", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // ================= LOGIN =================
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -62,7 +63,11 @@ app.post("/login", async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(400).json({ error: "Wrong password" });
 
-  const token = jwt.sign({ id: user._id }, "secret123", { expiresIn: "1h" });
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    "secret123",
+    { expiresIn: "1h" }
+  );
 
   res.json({ message: "Login successful ✅", token });
 });
