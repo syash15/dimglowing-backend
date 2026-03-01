@@ -8,22 +8,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================= DATABASE =================
+/* ================= DATABASE ================= */
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log("MongoDB Error:", err));
 
-// ================= USER MODEL =================
+
+/* ================= USER MODEL ================= */
+
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
   password: String,
-  role: { type: String, default: "user" }
+  role: { type: String, default: "user" } // Default role = user
 });
 
 const User = mongoose.model("User", userSchema);
 
-// ================= PRODUCT MODEL =================
+
+/* ================= PRODUCT MODEL ================= */
+
 const productSchema = new mongoose.Schema({
   name: String,
   price: Number,
@@ -33,10 +38,12 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model("Product", productSchema);
 
-// ================= SIGNUP =================
+
+/* ================= SIGNUP ================= */
+
 app.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -48,7 +55,7 @@ app.post("/signup", async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || "user"
+      role: "user" // 🔒 Always user (secure)
     });
 
     await newUser.save();
@@ -60,7 +67,9 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// ================= LOGIN =================
+
+/* ================= LOGIN ================= */
+
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,49 +88,15 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({ message: "Login successful ✅", token });
+    res.json({ message: "Login successful ✅", token, role: user.role });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ================= AUTH MIDDLEWARE =================
-async function authMiddleware(req, res, next) {
-  const token = req.headers.authorization;
 
-  if (!token) return res.status(401).json({ error: "Access Denied" });
-
-  try {
-    const decoded = jwt.verify(token, "secret123");
-
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    req.user = user;
-    next();
-  } catch (err) {
-    res.status(400).json({ error: "Invalid Token" });
-  }
-}
-
-async function authMiddleware(req, res, next) {
-  const token = req.headers.authorization;
-
-  if (!token) return res.status(401).json({ error: "Access Denied" });
-
-  try {
-    const decoded = jwt.verify(token, "secret123");
-
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    req.user = user;
-    next();
-  } catch (err) {
-    res.status(400).json({ error: "Invalid Token" });
-  }
-}
+/* ================= AUTH MIDDLEWARE ================= */
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -138,8 +113,10 @@ function verifyToken(req, res, next) {
       token,
       process.env.JWT_SECRET || "secret123"
     );
+
     req.user = verified;
     next();
+
   } catch (err) {
     res.status(400).json({ message: "Invalid Token" });
   }
@@ -152,7 +129,9 @@ function verifyAdmin(req, res, next) {
   next();
 }
 
-// ================= ADMIN ADD PRODUCT =================
+
+/* ================= ADMIN ADD PRODUCT ================= */
+
 app.post("/admin/add-product", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { name, price, image, description } = req.body;
@@ -173,7 +152,9 @@ app.post("/admin/add-product", verifyToken, verifyAdmin, async (req, res) => {
   }
 });
 
-// ================= GET PRODUCTS =================
+
+/* ================= GET PRODUCTS ================= */
+
 app.get("/products", async (req, res) => {
   try {
     const products = await Product.find();
@@ -183,7 +164,9 @@ app.get("/products", async (req, res) => {
   }
 });
 
-// ================= START SERVER =================
+
+/* ================= START SERVER ================= */
+
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
