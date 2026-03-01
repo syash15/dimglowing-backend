@@ -71,3 +71,21 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ Backend running on port ${PORT}`);
 });
+
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ error: "Access Denied" });
+
+  try {
+    const verified = jwt.verify(token, "secret123");
+    req.user = verified;
+    next();
+  } catch (err) {
+    res.status(400).json({ error: "Invalid Token" });
+  }
+}
+app.get("/profile", authMiddleware, async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  res.json(user);
+});
