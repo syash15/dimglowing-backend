@@ -87,6 +87,42 @@ app.post("/login", async (req, res) => {
 });
 
 // ================= AUTH MIDDLEWARE =================
+async function authMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ error: "Access Denied" });
+
+  try {
+    const decoded = jwt.verify(token, "secret123");
+
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    req.user = user;
+    next();
+  } catch (err) {
+    res.status(400).json({ error: "Invalid Token" });
+  }
+}
+
+async function authMiddleware(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ error: "Access Denied" });
+
+  try {
+    const decoded = jwt.verify(token, "secret123");
+
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    req.user = user;
+    next();
+  } catch (err) {
+    res.status(400).json({ error: "Invalid Token" });
+  }
+}
+
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
