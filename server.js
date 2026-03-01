@@ -125,16 +125,11 @@ app.post("/admin/add-product", verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // ================= PRODUCTS =================
-app.get("/products", (req, res) => {
-  res.json([
-    { id: 1, name: "LED Bulb", price: 199 },
-    { id: 2, name: "Wall Light", price: 899 },
-    { id: 3, name: "Ceiling Lamp", price: 1499 }
-  ]);
+app.get("/products", async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Backend running on port ${PORT}`);
-});
-
