@@ -40,6 +40,70 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model("Product", productSchema);
 
+/* ================= ORDER MODEL ================= */
+
+const orderSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  items: [
+    {
+      productId: String,
+      name: String,
+      price: Number,
+      quantity: Number
+    }
+  ],
+  totalAmount: Number,
+  status: { type: String, default: "Pending" },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Order = mongoose.model("Order", orderSchema);
+
+/* ================= CREATE ORDER ================= */
+
+app.post("/create-order", verifyToken, async (req, res) => {
+  try {
+
+    const { items } = req.body;
+
+    if (!items || items.length === 0)
+      return res.status(400).json({ error: "Cart is empty" });
+
+    let totalAmount = 0;
+
+    items.forEach(item => {
+      totalAmount += item.price * item.quantity;
+    });
+
+    const newOrder = new Order({
+      userId: req.user.id,
+      items,
+      totalAmount
+    });
+
+    await newOrder.save();
+
+    res.json({ message: "Order placed successfully ✅" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ================= GET ALL ORDERS (ADMIN) ================= */
+
+app.get("/admin/orders", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+
+    const orders = await Order.find().populate("userId", "name email");
+
+    res.json(orders);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 /* ================= SIGNUP ================= */
 
