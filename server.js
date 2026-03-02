@@ -38,7 +38,6 @@ const productSchema = new mongoose.Schema({
   description: String
 });
 
-const Product = mongoose.model("Product", productSchema);
 
 /* ================= ORDER MODEL ================= */
 
