@@ -44,6 +44,7 @@ const Product = mongoose.model("Product", productSchema);
 
 const orderSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
   items: [
     {
       productId: String,
@@ -52,7 +53,7 @@ const orderSchema = new mongoose.Schema({
       quantity: Number
     }
   ],
-  totalAmount: Number,
+
   shipping: {
     name: String,
     email: String,
@@ -61,6 +62,8 @@ const orderSchema = new mongoose.Schema({
     city: String,
     postal: String
   },
+
+  totalAmount: Number,
   status: { type: String, default: "Pending" },
   createdAt: { type: Date, default: Date.now }
 });
@@ -86,9 +89,8 @@ app.post("/create-order", verifyToken, async (req, res) => {
     const newOrder = new Order({
       userId: req.user.id,
       items,
-      totalAmount,
       shipping,
-      status: "Pending"
+      totalAmount
     });
 
     await newOrder.save();
