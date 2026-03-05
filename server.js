@@ -1,12 +1,19 @@
+require("dotenv").config();
+
 const mongoose = require("mongoose");
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const Razorpay = require("razorpay");
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 /* ================= DATABASE ================= */
 
@@ -38,6 +45,7 @@ const productSchema = new mongoose.Schema({
   description: String
 });
 
+const Product = mongoose.model("Product", productSchema);
 
 /* ================= ORDER MODEL ================= */
 
@@ -68,6 +76,31 @@ const orderSchema = new mongoose.Schema({
 });
 
 const Order = mongoose.model("Order", orderSchema);
+
+/* ================= RAZORPAY CREATE ORDER ================= */
+
+app.post("/create-payment", verifyToken, async (req, res) => {
+
+  try {
+
+    const { amount } = req.body;
+
+    const options = {
+      amount: amount * 100,
+      currency: "INR",
+      receipt: "receipt_order"
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    res.json(order);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+
+});
+
 
 /* ================= CREATE ORDER ================= */
 
