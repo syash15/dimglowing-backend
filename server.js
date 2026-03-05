@@ -9,6 +9,7 @@ const Razorpay = require("razorpay");
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
